@@ -17,15 +17,6 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 
       std::string message = pCharacteristic->getValue();  // Encoded message received
 
-      // REMOVE
-      Serial0.println("*********");
-      Serial0.println("Message received: ");
-      for (size_t i = 0; i < message.length(); i++){
-        Serial0.println(int(message[i]));
-      }
-      Serial0.println();
-      Serial0.println("*********");
-
       // Expected Format: <Signature> <GS> <Message Type> <GS> <Message | Data> <EOT>
 
       // Get signature (read until next GS character)
