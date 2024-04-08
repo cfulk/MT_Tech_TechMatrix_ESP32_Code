@@ -50,6 +50,12 @@ class MyCallbacks : public BLECharacteristicCallbacks {
           }
           curPosition++;
 
+          // Truncate message if too long
+          int maxLength = 100;
+          if (messageToScroll.length() > maxLength) {
+            messageToScroll = messageToScroll.substr(0, maxLength);
+          }
+
           // Print received message in serial window
           Serial0.println("*********");
           Serial0.print("Message received: ");
@@ -58,7 +64,40 @@ class MyCallbacks : public BLECharacteristicCallbacks {
           Serial0.println();
           Serial0.println("*********");
 
-          // Relay message to connected TechMatrix board...
+          // Relay message to connected TechMatrix board
+          // Format: %*FNMBBBBBBBB%n
+          //    N: Number of bytes to write
+          //    M: 0 if text scroll, 1 if graphic scroll
+          //    B: Raw byte
+          if (messageToScroll.length() > 0) {
+            std::string messageToTechMatrixHeader = "%*F";
+            int N = messageToScroll.size();
+            int M = 0;
+            std::string messageToTechMatrixTrailer = messageToScroll + "%n";
+
+            // Print activity for debugging
+            Serial0.println("*********");
+            Serial0.println("Sending message scroll to TechMatrix:");
+            for (size_t i = 0; i < messageToTechMatrixHeader.length(); i++) {
+              Serial0.println(messageToTechMatrixHeader[i]);
+            }
+            Serial0.println(N);
+            Serial0.println(M);
+            for (size_t i = 0; i < messageToTechMatrixTrailer.length(); i++) {
+              Serial0.println(messageToTechMatrixTrailer[i]);
+            }
+            Serial0.println("*********");
+
+            // Write to TechMatrix
+            for (size_t i = 0; i < messageToTechMatrixHeader.length(); i++) {
+              Serial0.write(messageToTechMatrixHeader[i]);
+            }
+            Serial0.write(N);
+            Serial0.write(M);
+            for (size_t i = 0; i < messageToTechMatrixTrailer.length(); i++) {
+              Serial0.write(messageToTechMatrixTrailer[i]);
+            }
+          }
 
         }
 
@@ -84,6 +123,15 @@ class MyCallbacks : public BLECharacteristicCallbacks {
             curPosition++;
           }
 
+          // Truncate number of pixel columns if too large
+          int maxColumns = 150;
+          if (pixelColumns.size() < 10) {
+            pixelColumns = std::vector<int> (10, 0);
+          }
+          if (pixelColumns.size() > maxColumns) {
+            pixelColumns = std::vector<int> ( &pixelColumns[0], &pixelColumns[0] + (maxColumns - 1) );
+          }
+
           // Print received graphic data in serial window
           Serial0.println("*********");
           Serial0.print("Graphic received: ");
@@ -102,8 +150,45 @@ class MyCallbacks : public BLECharacteristicCallbacks {
           }
           Serial0.println("*********");
 
-          // Relay message to connected TechMatrix board...
+          // Relay message to connected TechMatrix board
+          // Format: %*FNMBBBBBBBB%n
+          //    N: Number of bytes to write
+          //    M: 0 if text scroll, 1 if graphic scroll
+          //    B: Raw byte
+          std::string messageToTechMatrixHeader = "%*F";
+          int N = pixelColumns.size() + 1;
+          int M = 1;
+          std::string messageToTechMatrixTrailer = "%n";
+          
 
+          // Print activity for debugging
+          Serial0.println("*********");
+          Serial0.println("Sending graphic scroll to TechMatrix:");
+          for (size_t i = 0; i < messageToTechMatrixHeader.length(); i++) {
+            Serial0.println(messageToTechMatrixHeader[i]);
+          }
+          Serial0.println(N);
+          Serial0.println(M);
+          for (size_t i = 0; i < pixelColumns.size(); i++) {
+            Serial0.println(pixelColumns[i]);
+          }
+          for (size_t i = 0; i < messageToTechMatrixTrailer.length(); i++) {
+            Serial0.println(messageToTechMatrixTrailer[i]);
+          }
+          Serial0.println("*********");
+          
+          // Write to TechMatrix
+          for (size_t i = 0; i < messageToTechMatrixHeader.length(); i++) {
+            Serial0.write(messageToTechMatrixHeader[i]);
+          }
+          Serial0.write(N);
+          Serial0.write(M);
+          for (size_t curPos = 0; curPos < pixelColumns.size(); curPos++) {
+            Serial0.write(pixelColumns[curPos]);
+          }
+          for (size_t i = 0; i < messageToTechMatrixTrailer.length(); i++) {
+            Serial0.write(messageToTechMatrixTrailer[i]);
+          }
         }
       }
     }
