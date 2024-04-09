@@ -321,8 +321,8 @@ void printMessageMenuAction(){
       messageReceived = true;
     }
 
-    // If key was ASCII 32 - 126 or backspace, append to message
-    if ((input >= 32 && input <= 126) || input == 8){
+    // If key was ASCII 32 - 126, append to message
+    else if ((input >= 32 && input <= 126)){
 
       // Append string input to scroll message
       message += char(input);
@@ -331,12 +331,60 @@ void printMessageMenuAction(){
       Serial.print(char(input));
 
     }
+
+    // If backspace was entered, erase last character displayed
+    else if (input == 8 || input == 127) {
+      Serial.write(127);
+      message = message.substr(0, message.length() - 1);  // Remove last character from message
+    }
+
+    else {
+      Serial0.print("Invalid menu input: ");
+      Serial0.println(input);
+    }
     
     Serial.read(); // Flush input buffer
     
   }
 
-  // Send message to TechMatrix board here...
+  // Truncate message if too long
+  int maxLength = 100;
+  if (message.length() > maxLength) {
+    message = message.substr(0, maxLength);
+  }
+
+  // Relay message to connected TechMatrix board
+  // Format: %*FNMBBBBBBBB%n
+  //    N: Number of bytes to write
+  //    M: 0 if text scroll, 1 if graphic scroll
+  //    B: Raw byte
+  std::string messageToTechMatrixHeader = "%*F";
+  int N = message.size();
+  int M = 0;
+  std::string messageToTechMatrixTrailer = message + "%n";
+
+  // Print activity for debugging
+  Serial0.println("*********");
+  Serial0.println("Sending message scroll to TechMatrix:");
+  for (size_t i = 0; i < messageToTechMatrixHeader.length(); i++) {
+    Serial0.println(messageToTechMatrixHeader[i]);
+  }
+  Serial0.println(N);
+  Serial0.println(M);
+  for (size_t i = 0; i < messageToTechMatrixTrailer.length(); i++) {
+    Serial0.println(messageToTechMatrixTrailer[i]);
+  }
+  Serial0.println("*********");
+
+  // Write to TechMatrix
+  for (size_t i = 0; i < messageToTechMatrixHeader.length(); i++) {
+    Serial0.write(messageToTechMatrixHeader[i]);
+  }
+  Serial0.write(N);
+  Serial0.write(M);
+  for (size_t i = 0; i < messageToTechMatrixTrailer.length(); i++) {
+    Serial0.write(messageToTechMatrixTrailer[i]);
+  }
 
   Serial.println("\n\n\rThe message should now be displayed!");
   printMessageMenu->printChildren();
