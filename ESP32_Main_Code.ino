@@ -1,4 +1,3 @@
-
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
@@ -261,7 +260,8 @@ void setup() {
   Serial.begin(9600);       // UART serial port for computer to ESP32 communication
   Serial.print("\f\r\n");   // Begin writing UART output on new page
 
-  BLEDevice::init("MyESP32");                                   // Name device
+  std::string deviceName = "TechMatrix ESP32";                  // Device's desired display name
+  BLEDevice::init(deviceName);                                  // Initialize device and set display name
   BLEServer *pServer = BLEDevice::createServer();               // Set up server
   BLEService *pService = pServer->createService(SERVICE_UUID);  // Set up service
 
